@@ -42,6 +42,15 @@ extern Token *token;
 // parse.c
 //
 
+// ローカル変数の型
+typedef struct Var Var;
+struct Var {
+  Var *next;   // 次の変数かNULL
+  char *name;  // 変数の名前
+  int len;     // 名前の長さ
+  int offset;  // RBPからのオフセット
+};
+
 // 抽象構文木のノードの種類
 typedef enum {
   ND_ADD,     // +
@@ -53,7 +62,7 @@ typedef enum {
   ND_LT,      // <
   ND_LE,      // <=
   ND_ASSIGN,  // =
-  ND_LVAR,    // ローカル変数
+  ND_VAR,     // ローカル変数
   ND_NUM,     // 整数
 } NodeKind;
 
@@ -64,15 +73,20 @@ struct Node {
   Node *next;     // Next node
   Node *lhs;      // 左辺
   Node *rhs;      // 右辺
+  Var *var;       // kindがND_VARの場合のみ使う．
   int val;        // kindがND_NUMの場合のみ使う
-  int offset;     // kindがND_LVARの場合のみ使う
 };
 
-Node *program();
+typedef struct Function Function;
+struct Function {
+  Node *node;
+  Var *locals;
+  int stack_size;
+};
 
-extern Node *code[100];
+Function *program();
 
 //
 // codegen.c
 //
-void codegen(Node *node);
+void codegen(Function *prog);

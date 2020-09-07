@@ -1,0 +1,54 @@
+[
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-std=c11",
+            "-g",
+            "-o",
+            "codegen.o",
+            "codegen.c"
+        ],
+        "directory": "/usr/src/kmcc",
+        "file": "codegen.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-std=c11",
+            "-g",
+            "-o",
+            "main.o",
+            "main.c"
+        ],
+        "directory": "/usr/src/kmcc",
+        "file": "main.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-std=c11",
+            "-g",
+            "-o",
+            "tokenize.o",
+            "tokenize.c"
+        ],
+        "directory": "/usr/src/kmcc",
+        "file": "tokenize.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-std=c11",
+            "-g",
+            "-o",
+            "parse.o",
+            "parse.c"
+        ],
+        "directory": "/usr/src/kmcc",
+        "file": "parse.c"
+    }
+]
