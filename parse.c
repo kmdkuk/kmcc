@@ -80,7 +80,14 @@ Function *program() {
   return prog;
 }
 
+// stmt = "return" expr ";"
+//      | expr ";"
 Node *stmt() {
+  if (consume("return")) {
+    Node *node = new_unary(ND_RETURN, expr());
+    expect(";");
+    return node;
+  }
   Node *node = expr();
   expect(";");
   return node;

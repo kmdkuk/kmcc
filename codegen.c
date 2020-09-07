@@ -38,6 +38,11 @@ void gen(Node *node) {
       gen(node->rhs);
       store();
       return;
+    case ND_RETURN:
+      gen(node->lhs);
+      printf("  pop rax\n");
+      printf("  jmp .L.return\n");
+      return;
     default:
       break;
   }
@@ -104,8 +109,7 @@ void codegen(Function *prog) {
   for (Node *node = prog->node; node; node = node->next) gen(node);
 
   // エピローグ
-  // 最後の式の結果がRAXに残っているのでそれが返り値になる．
-  printf("  pop rax\n");
+  printf(".L.return:\n");
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
