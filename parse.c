@@ -15,7 +15,10 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Node *program();
+Node *stmt();
 Node *expr();
+Node *assign();
 Node *equality();
 Node *relational();
 Node *add();
@@ -23,8 +26,32 @@ Node *mul();
 Node *unary();
 Node *primary();
 
+Node *program() {
+  Node head;
+  head.next = NULL;
+  Node *cur = &head;
+
+  while (!at_eof()) {
+    cur->next = stmt();
+    cur = cur->next;
+  }
+  return head.next;
+}
+
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
 // expr = equality
-Node *expr() { return equality(); }
+Node *expr() { return assign(); }
+
+Node *assign() {
+  Node *node = equality();
+  if (consume("=")) node = new_node(ND_ASSIGN, node, assign());
+  return node;
+}
 
 // equality = relational ("==" relational | "!=" relational)*
 Node *equality() {
@@ -96,6 +123,14 @@ Node *primary() {
   if (consume("(")) {
     Node *node = expr();
     expect(")");
+    return node;
+  }
+
+  Token *tok = consume_ident();
+  if (tok) {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    node->offset = (tok->str[0] - 'a' + 1) * 8;
     return node;
   }
 
