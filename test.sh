@@ -57,4 +57,9 @@ assert 8 'a=3; z=5; return a+z;'
 assert 3 'hoge=3; return hoge;'
 assert 8 'hoge123=3; fuga=5; return hoge123+fuga;'
 
+assert 3 'if (0) return 2; return 3;'
+assert 3 'if (1-1) return 2; return 3;'
+assert 2 'if (1) return 2; return 3;'
+assert 2 'if (2-1) return 2; return 3;'
+
 echo OK

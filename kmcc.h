@@ -53,18 +53,20 @@ struct Var {
 
 // 抽象構文木のノードの種類
 typedef enum {
-  ND_ADD,     // +
-  ND_SUB,     // -
-  ND_MUL,     // *
-  ND_DIV,     // /
-  ND_EQ,      // ==
-  ND_NE,      // !=
-  ND_LT,      // <
-  ND_LE,      // <=
-  ND_ASSIGN,  // =
-  ND_RETURN,  // "return"
-  ND_VAR,     // ローカル変数
-  ND_NUM,     // 整数
+  ND_ADD,        // +
+  ND_SUB,        // -
+  ND_MUL,        // *
+  ND_DIV,        // /
+  ND_EQ,         // ==
+  ND_NE,         // !=
+  ND_LT,         // <
+  ND_LE,         // <=
+  ND_ASSIGN,     // =
+  ND_RETURN,     // "return"
+  ND_IF,         // "if"
+  ND_EXPR_STMT,  // Expression statement
+  ND_VAR,        // ローカル変数
+  ND_NUM,        // 整数
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -72,10 +74,17 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind;  // ノードの型
   Node *next;     // Next node
-  Node *lhs;      // 左辺
-  Node *rhs;      // 右辺
-  Var *var;       // kindがND_VARの場合のみ使う．
-  int val;        // kindがND_NUMの場合のみ使う
+
+  Node *lhs;  // 左辺
+  Node *rhs;  // 右辺
+
+  // "if" statement
+  Node *cond;
+  Node *then;
+  Node *els;
+
+  Var *var;  // kindがND_VARの場合のみ使う．
+  int val;   // kindがND_NUMの場合のみ使う
 };
 
 typedef struct Function Function;
