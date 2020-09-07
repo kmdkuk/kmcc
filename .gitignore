@@ -75,3 +75,4 @@ fabric.properties
 kmcc
 tmp
 tmp.s
+*.o
