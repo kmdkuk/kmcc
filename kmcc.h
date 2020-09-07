@@ -66,6 +66,7 @@ typedef enum {
   ND_IF,         // "if"
   ND_WHILE,      // "while"
   ND_FOR,        // "for"
+  ND_BLOCK,      // { ... }
   ND_EXPR_STMT,  // Expression statement
   ND_VAR,        // ローカル変数
   ND_NUM,        // 整数
@@ -86,6 +87,9 @@ struct Node {
   Node *els;
   Node *init;
   Node *inc;
+
+  // Block
+  Node *body;
 
   Var *var;  // kindがND_VARの場合のみ使う．
   int val;   // kindがND_NUMの場合のみ使う
