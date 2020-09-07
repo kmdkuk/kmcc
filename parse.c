@@ -83,6 +83,8 @@ Function *program() {
 static Node *read_expr_stmt(void) { return new_unary(ND_EXPR_STMT, expr()); }
 
 // stmt = "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "while" "(" expr ")" stmt
 //      | expr ";"
 Node *stmt() {
   if (consume("return")) {
@@ -100,6 +102,15 @@ Node *stmt() {
     if (consume("else")) {
       node->els = stmt();
     }
+    return node;
+  }
+
+  if (consume("while")) {
+    Node *node = new_node(ND_WHILE);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
     return node;
   }
 
