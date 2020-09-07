@@ -86,7 +86,7 @@ static bool is_alnum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
 
 static char *starts_with_reserved(char *p) {
   // Keyword
-  static char *kw[] = {"return", "if", "else", "while"};
+  static char *kw[] = {"return", "if", "else", "while", "for"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);
@@ -96,8 +96,12 @@ static char *starts_with_reserved(char *p) {
   // Multi-letter punctuator
   static char *ops[] = {"==", "!=", "<=", ">="};
 
-  for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++)
-    if (startswith(p, ops[i])) return ops[i];
+  for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++) {
+    if (startswith(p, ops[i])) {
+      // printf("find ops %s\n", ops[i]);
+      return ops[i];
+    }
+  }
 
   return NULL;
 }
@@ -119,6 +123,7 @@ Token *tokenize() {
     // Keywords or multi-letter punctuators
     char *kw = starts_with_reserved(p);
     if (kw) {
+      // printf("find kewords %s\n", kw);
       int len = strlen(kw);
       cur = new_token(TK_RESERVED, cur, p, len);
       p += len;
@@ -130,10 +135,11 @@ Token *tokenize() {
       char *q = p++;
       while (is_alnum(*p)) p++;
       cur = new_token(TK_IDENT, cur, q, p - q);
+      continue;
     }
 
     // Single-letter punctuator
-    if (strchr("+-*/()<>=;", *p)) {
+    if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
