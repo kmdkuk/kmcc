@@ -262,9 +262,15 @@ Node *mul() {
   }
 }
 
+// unary = "+"? primary
+//       | "-"? primary
+//       | "*" unary
+//       | "&" unary
 Node *unary() {
   if (consume("+")) return unary();
   if (consume("-")) return new_binary(ND_SUB, new_num(0), unary());
+  if (consume("&")) return new_unary(ND_ADDR, unary());
+  if (consume("*")) return new_unary(ND_DEREF, unary());
   return primary();
 }
 
