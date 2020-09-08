@@ -14,10 +14,7 @@ void error(char *fmt, ...) {
 }
 
 // エラー箇所を報告する
-void error_at(char *loc, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-
+static void verror_at(char *loc, char *fmt, va_list ap) {
   int pos = loc - user_input;
   fprintf(stderr, "%s\n", user_input);
   fprintf(stderr, "%*s", pos, " ");
@@ -27,14 +24,28 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
+// エラー箇所を報告してexit
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(loc, fmt, ap);
+}
+
+void error_tok(Token *tok, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(tok->str, fmt, ap);
+}
+
 // 次のトークンが期待している記号のときは，トークンを1つ読み進めて
 // 真を返す．それ以外の場合は偽を返す．
-bool consume(char *op) {
+Token *consume(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
-    return false;
+    return NULL;
+  Token *t = token;
   token = token->next;
-  return true;
+  return t;
 }
 
 Token *consume_ident() {
@@ -49,14 +60,14 @@ Token *consume_ident() {
 void expect(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
-    error_at(token->str, "'%s'ではありません．", op);
+    error_tok(token, "'%s'ではありません．", op);
   token = token->next;
 }
 
 // 次のトークンが数値の場合，トークンを1つ読み進めてその数値を返す，
 // それ以外の場合にはエラーを報告する．
 int expect_number() {
-  if (token->kind != TK_NUM) error_at(token->str, "数ではありません．");
+  if (token->kind != TK_NUM) error_tok(token, "数ではありません．");
   int val = token->val;
   token = token->next;
   return val;
@@ -64,7 +75,7 @@ int expect_number() {
 
 // 現在のトークンがTK_IDENTであることを確認する．
 char *expect_ident() {
-  if (token->kind != TK_IDENT) error_at(token->str, "識別子ではありません．");
+  if (token->kind != TK_IDENT) error_tok(token, "識別子ではありません．");
   char *s = duplicate(token->str, token->len);
   token = token->next;
   return s;

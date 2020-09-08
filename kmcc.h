@@ -29,7 +29,8 @@ struct Token {
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
-bool consume(char *op);
+void error_tok(Token *tok, char *fmt, ...);
+Token *consume(char *op);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();
@@ -88,6 +89,7 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind;  // ノードの型
   Node *next;     // Next node
+  Token *tok;     // Representative token
 
   Node *lhs;  // 左辺
   Node *rhs;  // 右辺

@@ -21,7 +21,7 @@ static void gen_addr(Node *node) {
       break;
   }
 
-  error("not an lvalue");
+  error_tok(node->tok, "not an lvalue");
 }
 
 static void load() {
