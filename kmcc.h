@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *duplicate(char *str, size_t len);
+
 //
 // tokenize.c
 //
@@ -31,6 +33,7 @@ bool consume(char *op);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();
+char *expect_ident();
 bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 Token *tokenize();
@@ -102,6 +105,8 @@ struct Node {
 
 typedef struct Function Function;
 struct Function {
+  Function *next;
+  char *name;
   Node *node;
   Var *locals;
   int stack_size;

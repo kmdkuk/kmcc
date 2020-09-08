@@ -1,7 +1,9 @@
 #include "kmcc.h"
 
-static int labelseq = 1;
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
+static int labelseq = 1;
+static char *func_name;
 
 // スタックにノードのアドレスをプッシュする．
 static void gen_addr(Node *node) {
@@ -133,7 +135,7 @@ void gen(Node *node) {
     case ND_RETURN:
       gen(node->lhs);
       printf("  pop rax\n");
-      printf("  jmp .L.return\n");
+      printf("  jmp .L.return.%s\n", func_name);
       return;
     default:
       break;
@@ -189,20 +191,24 @@ void gen(Node *node) {
 void codegen(Function *prog) {
   // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
 
-  // プロローグ
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", prog->stack_size);
+  for (Function *fn = prog; fn; fn = fn->next) {
+    func_name = fn->name;
+    printf(".global %s\n", func_name);
+    printf("%s:\n", func_name);
 
-  // コードの実行
-  for (Node *node = prog->node; node; node = node->next) gen(node);
+    // プロローグ
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", fn->stack_size);
 
-  // エピローグ
-  printf(".L.return:\n");
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
+    // コードの実行
+    for (Node *node = fn->node; node; node = node->next) gen(node);
+
+    // エピローグ
+    printf(".L.return.%s:\n", func_name);
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+  }
 }

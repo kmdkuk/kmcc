@@ -52,7 +52,7 @@ static Var *new_lvar(char *name) {
   locals = var;
   return var;
 }
-
+static Function *function();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -63,21 +63,40 @@ Node *mul();
 Node *unary();
 Node *primary();
 
+// program = function*
 Function *program() {
+  Function head = {};
+  Function *cur = &head;
+
+  while (!at_eof()) {
+    cur->next = function();
+    cur = cur->next;
+  }
+  return head.next;
+}
+
+// function = ident "(" ")" "{" stmt* "}"
+Function *function() {
   locals = NULL;
+
+  char *name = expect_ident();
+  expect("(");
+  expect(")");
+  expect("{");
 
   Node head = {};
   Node *cur = &head;
 
-  while (!at_eof()) {
+  while (!consume("}")) {
     cur->next = stmt();
     cur = cur->next;
   }
 
-  Function *prog = calloc(1, sizeof(Function));
-  prog->node = head.next;
-  prog->locals = locals;
-  return prog;
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = name;
+  fn->node = head.next;
+  fn->locals = locals;
+  return fn;
 }
 
 static Node *read_expr_stmt(void) { return new_unary(ND_EXPR_STMT, expr()); }

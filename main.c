@@ -11,13 +11,15 @@ int main(int argc, char **argv) {
   token = tokenize();
   Function *prog = program();
 
-  // ローカル変数のオフセットを割り当てる
-  int offset = 0;
-  for (Var *var = prog->locals; var; var = var->next) {
-    offset += 8;
-    var->offset = offset;
+  for (Function *fn = prog; fn; fn = fn->next) {
+    // ローカル変数のオフセットを割り当てる
+    int offset = 0;
+    for (Var *var = fn->locals; var; var = var->next) {
+      offset += 8;
+      var->offset = offset;
+    }
+    fn->stack_size = offset;
   }
-  prog->stack_size = offset;
 
   codegen(prog);
 

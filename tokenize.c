@@ -62,6 +62,14 @@ int expect_number() {
   return val;
 }
 
+// 現在のトークンがTK_IDENTであることを確認する．
+char *expect_ident() {
+  if (token->kind != TK_IDENT) error_at(token->str, "識別子ではありません．");
+  char *s = duplicate(token->str, token->len);
+  token = token->next;
+  return s;
+}
+
 bool at_eof() { return token->kind == TK_EOF; }
 
 // 新しいトークンを作成してcurに繋げる．
