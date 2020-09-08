@@ -94,6 +94,7 @@ struct Node {
 
   // func
   char *func_name;
+  Node *args;
 
   Var *var;  // kindがND_VARの場合のみ使う．
   int val;   // kindがND_NUMの場合のみ使う

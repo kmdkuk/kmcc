@@ -235,8 +235,21 @@ char *duplicate(char *str, size_t len) {
   return buffer;
 }
 
-// primary = "(" expr ")" | ident args? | num
-// args = "(" ")"
+// func-args = "(" (assign ("," assign)*)? ")"
+static Node *func_args(void) {
+  if (consume(")")) return NULL;
+
+  Node *head = assign();
+  Node *cur = head;
+  while (consume(",")) {
+    cur->next = assign();
+    cur = cur->next;
+  }
+  expect(")");
+  return head;
+}
+
+// primary = "(" expr ")" | ident func-args? | num
 Node *primary() {
   // 次のトークンが"("なら，"(" expr ")"のはず
   if (consume("(")) {
@@ -249,9 +262,9 @@ Node *primary() {
   if (tok) {
     // Function call
     if (consume("(")) {
-      expect(")");
       Node *node = new_node(ND_FUNC_CALL);
       node->func_name = duplicate(tok->str, tok->len);
+      node->args = func_args();
       return node;
     }
 
