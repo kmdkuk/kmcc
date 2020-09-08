@@ -1,11 +1,12 @@
 #include "kmcc.h"
 
 // すべてのローカル変数
-Var *locals;
+static VarList *locals;
 
 // 変数を名前で検索する．見つからなかった場合は，NULLを返す．
 static Var *find_var(Token *tok) {
-  for (Var *var = locals; var; var = var->next) {
+  for (VarList *vl = locals; vl; vl = vl->next) {
+    Var *var = vl->var;
     if (strlen(var->name) == tok->len &&
         !strncmp(tok->str, var->name, tok->len)) {
       return var;
@@ -47,9 +48,12 @@ static Node *new_var_node(Var *var) {
 
 static Var *new_lvar(char *name) {
   Var *var = calloc(1, sizeof(Var));
-  var->next = locals;
   var->name = name;
-  locals = var;
+
+  VarList *vl = calloc(1, sizeof(VarList));
+  vl->var = var;
+  vl->next = locals;
+  locals = vl;
   return var;
 }
 static Function *function();
@@ -75,13 +79,32 @@ Function *program() {
   return head.next;
 }
 
-// function = ident "(" ")" "{" stmt* "}"
+static VarList *read_func_params() {
+  if (consume(")")) return NULL;
+
+  VarList *head = calloc(1, sizeof(VarList));
+  head->var = new_lvar(expect_ident());
+  VarList *cur = head;
+
+  while (!consume(")")) {
+    expect(",");
+    cur->next = calloc(1, sizeof(VarList));
+    cur->next->var = new_lvar(expect_ident());
+    cur = cur->next;
+  }
+
+  return head;
+}
+
+// function = ident "(" params? ")" "{" stmt* "}"
+// params   = idnet ("," ident)*
 Function *function() {
   locals = NULL;
 
-  char *name = expect_ident();
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = expect_ident();
   expect("(");
-  expect(")");
+  fn->params = read_func_params();
   expect("{");
 
   Node head = {};
@@ -92,8 +115,6 @@ Function *function() {
     cur = cur->next;
   }
 
-  Function *fn = calloc(1, sizeof(Function));
-  fn->name = name;
   fn->node = head.next;
   fn->locals = locals;
   return fn;
