@@ -101,6 +101,10 @@ void gen(Node *node) {
     case ND_BLOCK:
       for (Node *n = node->body; n; n = n->next) gen(n);
       return;
+    case ND_FUNC_CALL:
+      printf("  call %s\n", node->func_name);
+      printf("  push rax\n");
+      return;
     case ND_RETURN:
       gen(node->lhs);
       printf("  pop rax\n");

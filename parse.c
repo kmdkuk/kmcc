@@ -235,6 +235,8 @@ char *duplicate(char *str, size_t len) {
   return buffer;
 }
 
+// primary = "(" expr ")" | ident args? | num
+// args = "(" ")"
 Node *primary() {
   // 次のトークンが"("なら，"(" expr ")"のはず
   if (consume("(")) {
@@ -245,6 +247,15 @@ Node *primary() {
 
   Token *tok = consume_ident();
   if (tok) {
+    // Function call
+    if (consume("(")) {
+      expect(")");
+      Node *node = new_node(ND_FUNC_CALL);
+      node->func_name = duplicate(tok->str, tok->len);
+      return node;
+    }
+
+    // Identifier
     Var *var = find_var(tok);
     if (!var) {
       char *name = duplicate(tok->str, tok->len);
