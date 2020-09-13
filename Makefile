@@ -14,8 +14,8 @@ test: kmcc
 clean:
 	rm -f kmcc *.o *~ tmp*
 
-bash:
-	docker-compose run --rm app bash
+sh:
+	docker-compose run --rm app zsh
 
 docker:
 	docker-compose build
