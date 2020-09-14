@@ -102,6 +102,7 @@ static Type *read_type_suffix(Type *base) {
   }
   int array_size = expect_number();
   expect("]");
+  base = read_type_suffix(base);
   return array_of(base, array_size);
 }
 
