@@ -1,16 +1,6 @@
 #!/bin/bash
 
-cat <<EOF | gcc -xc -c -o tmp2.o -
-int ret3() { return 3; }
-int ret5() { return 5; }
-int add(int x, int y) { return x+y; }
-int sub(int x, int y) { return x-y; }
-int add6(int a, int b, int c, int d, int e, int f) {
-  return a+b+c+d+e+f;
-}
-EOF
-
-cat <<'EOS' | xargs -n2 -P0 ./assert.sh
+cat <<'EOS' | xargs --no-run-if-empty -n2 -P0 ./assert.sh
 0 'int main() { return 0; }'
 42 'int main() { return 42; }'
 21 'int main() { return 5+20-4; }'
@@ -89,6 +79,12 @@ cat <<'EOS' | xargs -n2 -P0 ./assert.sh
 7 'int main() { int x=3; int y=5; *(&x+1)=7; return y; }'
 7 'int main() { int x=3; int y=5; *(&y-1)=7; return x; }'
 8 'int main() { int x=3; int y=5; return foo(&x, y); } int foo(int *x, int y) { return *x + y; }'
+
+3 'int main() { int x[2]; int *y=&x; *y=3; return *x; }'
+
+3 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *x; }'
+4 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }'
+5 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
 EOS
 
 if [ $? -gt 0 ]; then

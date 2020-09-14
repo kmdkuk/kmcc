@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "kmcc.h"
 
 // すべてのローカル変数
@@ -94,10 +96,22 @@ static Type *basetype() {
   return ty;
 }
 
+static Type *read_type_suffix(Type *base) {
+  if (!consume("[")) {
+    return base;
+  }
+  int array_size = expect_number();
+  expect("]");
+  return array_of(base, array_size);
+}
+
 static VarList *read_func_param() {
-  VarList *vl = calloc(1, sizeof(VarList));
   Type *ty = basetype();
-  vl->var = new_lvar(expect_ident(), ty);
+  char *name = expect_ident();
+  ty = read_type_suffix(ty);
+
+  VarList *vl = calloc(1, sizeof(VarList));
+  vl->var = new_lvar(name, ty);
   return vl;
 }
 
@@ -142,11 +156,13 @@ Function *function() {
   return fn;
 }
 
-// declartion = basetype ident ("=" expr) ";"
+// declartion = basetype ident ("[" num "]")* ("=" expr) ";"
 static Node *declartion() {
   Token *tok = token;
   Type *ty = basetype();
-  Var *var = new_lvar(expect_ident(), ty);
+  char *name = expect_ident();
+  ty = read_type_suffix(ty);
+  Var *var = new_lvar(name, ty);
 
   if (consume(";")) {
     return new_node(ND_NULL, tok);

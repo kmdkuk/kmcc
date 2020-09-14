@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -137,17 +138,20 @@ Function *program();
 // typing.c
 //
 
-typedef enum { TY_INT, TY_PTR } TypeKind;
+typedef enum { TY_INT, TY_PTR, TY_ARRAY } TypeKind;
 
 struct Type {
   TypeKind kind;
+  int size;       // sizeof() value
   Type *base;
+  int array_len;
 };
 
 extern Type *int_type;
 
 bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
+Type *array_of(Type *base, int size);
 void add_type(Node *node);
 
 //
