@@ -107,6 +107,17 @@ cat <<'EOS' | xargs --no-run-if-empty -n2 -P0 ./assert.sh
 4 'int main() { int x[2][3]; int *y=x; y[4]=4; return x[1][1]; }'
 5 'int main() { int x[2][3]; int *y=x; y[5]=5; return x[1][2]; }'
 6 'int main() { int x[2][3]; int *y=x; y[6]=6; return x[2][0]; }'
+
+8 'int main() { int x; return sizeof(x); }'
+8 'int main() { int x; return sizeof x; }'
+8 'int main() { int *x; return sizeof(x); }'
+32 'int main() { int x[4]; return sizeof(x); }'
+96 'int main() { int x[3][4]; return sizeof(x); }'
+32 'int main() { int x[3][4]; return sizeof(*x); }'
+8 'int main() { int x[3][4]; return sizeof(**x); }'
+9 'int main() { int x[3][4]; return sizeof(**x) + 1; }'
+9 'int main() { int x[3][4]; return sizeof **x + 1; }'
+8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
 EOS
 
 if [ $? -gt 0 ]; then
