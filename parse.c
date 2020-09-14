@@ -72,6 +72,7 @@ static Node *relational();
 static Node *add();
 static Node *mul();
 static Node *unary();
+static Node *postfix();
 static Node *primary();
 
 // program = function*
@@ -363,8 +364,11 @@ Node *mul() {
   Token *tok;
 
   for (;;) {
-    if ((tok = consume("*")))
-      node = new_binary(ND_MUL, node, unary(), tok);
+    if ((tok = consume("*"))) node = new_binary(ND_MUL, node, unary(), tok);
+    // unary = "+"? primary
+    //       | "-"? primary
+    //       | "*" unary
+    //       | "&" unary
     else if ((tok = consume("/")))
       node = new_binary(ND_DIV, node, unary(), tok);
     else
@@ -372,10 +376,8 @@ Node *mul() {
   }
 }
 
-// unary = "+"? primary
-//       | "-"? primary
-//       | "*" unary
-//       | "&" unary
+// unary = ("+" | "-" | "*" | "&")? unary
+//       | postfix
 Node *unary() {
   Token *tok;
   if (consume("+")) return unary();
@@ -383,7 +385,21 @@ Node *unary() {
     return new_binary(ND_SUB, new_num(0, tok), unary(), tok);
   if ((tok = consume("&"))) return new_unary(ND_ADDR, unary(), tok);
   if ((tok = consume("*"))) return new_unary(ND_DEREF, unary(), tok);
-  return primary();
+  return postfix();
+}
+
+// postfix = primary ("[" expr "]")*
+static Node *postfix() {
+  Node *node = primary();
+  Token *tok;
+
+  while ((tok = consume("["))) {
+    // x[y] は *(x+y)の省略
+    Node *exp = new_add(node, expr(), tok);
+    expect("]");
+    node = new_unary(ND_DEREF, exp, tok);
+  }
+  return node;
 }
 
 char *duplicate(char *str, size_t len) {
