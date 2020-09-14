@@ -10,7 +10,7 @@ int add6(int a, int b, int c, int d, int e, int f) {
 }
 EOF
 
-cat <<'EOS' | xargs -n2 -P10 ./assert.sh
+cat <<'EOS' | xargs -n2 -P0 ./assert.sh
 0 'int main() { return 0; }'
 42 'int main() { return 42; }'
 21 'int main() { return 5+20-4; }'
@@ -90,4 +90,9 @@ cat <<'EOS' | xargs -n2 -P10 ./assert.sh
 7 'int main() { int x=3; int y=5; *(&y-1)=7; return x; }'
 8 'int main() { int x=3; int y=5; return foo(&x, y); } int foo(int *x, int y) { return *x + y; }'
 EOS
+
+if [ $? -gt 0 ]; then
+  echo 'not ok'
+  exit 1
+fi
 echo OK
