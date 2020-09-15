@@ -128,6 +128,15 @@ cat <<'EOS' | xargs --no-run-if-empty -n2 -P0 ./assert.sh
 
 8 'int x; int main() { return sizeof(x); }'
 32 'int x[4]; int main() { return sizeof(x); }'
+
+1 'int main() { char x=1; return x; }'
+1 'int main() { char x=1; char y=2; return x; }'
+2 'int main() { char x=1; char y=2; return y; }'
+
+1 'int main() { char x; return sizeof(x); }'
+10 'int main() { char x[10]; return sizeof(x); }'
+1 'int main() { return sub_char(7, 3, 3); } int sub_char(char a, char b, char c) { return a-b-c; }'
+
 EOS
 
 if [ $? -gt 0 ]; then

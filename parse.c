@@ -135,10 +135,15 @@ Program *program() {
   return prog;
 }
 
-// basetype = "int" "*"*
+// basetype = ("char" | "int") "*"*
 static Type *basetype() {
-  expect("int");
-  Type *ty = int_type;
+  Type *ty;
+  if (consume("char")) {
+    ty = char_type;
+  } else {
+    expect("int");
+    ty = int_type;
+  }
   while (consume("*")) {
     ty = pointer_to(ty);
   }
@@ -240,6 +245,9 @@ static Node *read_expr_stmt(void) {
   return new_unary(ND_EXPR_STMT, expr(), tok);
 }
 
+// 次のトークンが型を表していればtrue
+static bool is_typename() { return peek("char") || peek("int"); }
+
 static Node *stmt() {
   Node *node = stmt2();
   add_type(node);
@@ -314,7 +322,7 @@ Node *stmt2() {
     return node;
   }
 
-  if ((tok = peek("int"))) {
+  if (is_typename()) {
     return declartion();
   }
 
@@ -421,15 +429,13 @@ Node *mul() {
   Token *tok;
 
   for (;;) {
-    if ((tok = consume("*"))) node = new_binary(ND_MUL, node, unary(), tok);
-    // unary = "+"? primary
-    //       | "-"? primary
-    //       | "*" unary
-    //       | "&" unary
-    else if ((tok = consume("/")))
+    if ((tok = consume("*"))) {
+      node = new_binary(ND_MUL, node, unary(), tok);
+    } else if ((tok = consume("/"))) {
       node = new_binary(ND_DIV, node, unary(), tok);
-    else
+    } else {
       return node;
+    }
   }
 }
 

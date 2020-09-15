@@ -40,8 +40,9 @@ void error_tok(Token *tok, char *fmt, ...) {
 // 現在のトークンがsとマッチした場合，Tokenを返す．
 Token *peek(char *s) {
   if (token->kind != TK_RESERVED || strlen(s) != token->len ||
-      strncmp(token->str, s, token->len))
+      strncmp(token->str, s, token->len)) {
     return NULL;
+  }
   return token;
 }
 
@@ -111,7 +112,8 @@ static bool is_alnum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
 
 static char *starts_with_reserved(char *p) {
   // Keyword
-  static char *kw[] = {"return", "if", "else", "while", "for", "int", "sizeof"};
+  static char *kw[] = {"return", "if",  "else", "while",
+                       "for",    "int", "char", "sizeof"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);
