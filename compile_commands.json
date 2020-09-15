@@ -6,6 +6,19 @@
             "-std=c11",
             "-g",
             "-o",
+            "main.o",
+            "main.c"
+        ],
+        "directory": "/usr/src/kmcc",
+        "file": "main.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-std=c11",
+            "-g",
+            "-o",
             "codegen.o",
             "codegen.c"
         ],
@@ -19,11 +32,11 @@
             "-std=c11",
             "-g",
             "-o",
-            "main.o",
-            "main.c"
+            "parse.o",
+            "parse.c"
         ],
         "directory": "/usr/src/kmcc",
-        "file": "main.c"
+        "file": "parse.c"
     },
     {
         "arguments": [
@@ -45,10 +58,10 @@
             "-std=c11",
             "-g",
             "-o",
-            "parse.o",
-            "parse.c"
+            "type.o",
+            "type.c"
         ],
         "directory": "/usr/src/kmcc",
-        "file": "parse.c"
+        "file": "type.c"
     }
 ]
