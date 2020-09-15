@@ -8,6 +8,7 @@
 
 char *duplicate(char *str, size_t len);
 typedef struct Type Type;
+typedef struct Member Member;
 
 //
 // tokenize.c
@@ -92,6 +93,7 @@ typedef enum {
   ND_LT,         // <
   ND_LE,         // <=
   ND_ASSIGN,     // =
+  ND_MEMBER,     // . (struct member access)
   ND_ADDR,       // &
   ND_DEREF,      // *
   ND_RETURN,     // "return"
@@ -128,6 +130,9 @@ struct Node {
   // Block or statement expression
   Node *body;
 
+  // Struct member access
+  Member *member;
+
   // func
   char *func_name;
   Node *args;
@@ -159,13 +164,28 @@ Program *program();
 // typing.c
 //
 
-typedef enum { TY_CHAR, TY_INT, TY_PTR, TY_ARRAY } TypeKind;
+typedef enum {
+  TY_CHAR,
+  TY_INT,
+  TY_PTR,
+  TY_ARRAY,
+  TY_STRUCT,
+} TypeKind;
 
 struct Type {
   TypeKind kind;
   int size;  // sizeof() value
   Type *base;
   int array_len;
+  Member *members;  // struct
+};
+
+// Struct member
+struct Member {
+  Member *next;
+  Type *ty;
+  char *name;
+  int offset;
 };
 
 extern Type *char_type;
