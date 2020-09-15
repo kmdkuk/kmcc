@@ -166,6 +166,23 @@ Token *tokenize() {
       continue;
     }
 
+    // 文字列
+    if (*p == '"') {
+      char *q = p++;
+      while (*p && *p != '"') {
+        p++;
+      }
+      if (!*p) {
+        error_at(q, "文字列が閉じられていない．");
+      }
+      p++;
+
+      cur           = new_token(TK_STR, cur, q, p - q);
+      cur->contents = duplicate(q + 1, p - q - 2);
+      cur->cont_len = p - q - 1;
+      continue;
+    }
+
     // Keywords or multi-letter punctuators
     char *kw = starts_with_reserved(p);
     if (kw) {

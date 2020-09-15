@@ -92,6 +92,13 @@ static Var *new_gvar(char *name, Type *ty) {
   return var;
 }
 
+static char *new_label() {
+  static int cnt = 0;
+  char buf[20];
+  sprintf(buf, ".L.data.%d", cnt++);
+  return duplicate(buf, 20);
+}
+
 static Function *function();
 static Type *basetype();
 static void global_var();
@@ -506,6 +513,7 @@ static Node *func_args(void) {
 // primary = "(" expr ")"
 //         | "sizeof" unary
 //         | ident func-args?
+//         | str
 //         | num
 Node *primary() {
   Token *tok;
@@ -541,6 +549,16 @@ Node *primary() {
   }
 
   tok = token;
+  if (tok->kind == TK_STR) {
+    token = token->next;
+
+    Type *ty      = array_of(char_type, tok->cont_len);
+    Var *var      = new_gvar(new_label(), ty);
+    var->contents = tok->contents;
+    var->cont_len = tok->cont_len;
+    return new_var_node(var, tok);
+  }
+
   if (tok->kind != TK_NUM)
     error_tok(tok, "expected expression");
   return new_num(expect_number(), tok);
