@@ -9,7 +9,9 @@ kmcc: $(OBJS)
 $(OBJS): kmcc.h
 
 test: kmcc
-	./test.sh
+	./kmcc tests.kmc > tmp.s
+	gcc -static -o tmp tmp.s
+	./tmp
 
 clean:
 	rm -f kmcc *.o *~ tmp*
