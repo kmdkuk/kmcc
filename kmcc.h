@@ -39,7 +39,10 @@ void expect(char *op);
 int expect_number();
 char *expect_ident();
 bool at_eof();
-Token *new_token(TokenKind kind, Token *cur, char *str, int len);
+Token *new_token(TokenKind kind,
+                 Token *cur,
+                 char *str,
+                 int len);
 Token *tokenize();
 
 extern char *user_input;

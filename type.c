@@ -1,9 +1,11 @@
 #include "kmcc.h"
 
 Type *char_type = &(Type){TY_CHAR, 1};
-Type *int_type = &(Type){TY_INT, 8};
+Type *int_type  = &(Type){TY_INT, 8};
 
-bool is_integer(Type *ty) { return ty->kind == TY_CHAR || ty->kind == TY_INT; }
+bool is_integer(Type *ty) {
+  return ty->kind == TY_CHAR || ty->kind == TY_INT;
+}
 
 Type *pointer_to(Type *base) {
   Type *ty = calloc(1, sizeof(Type));
@@ -14,16 +16,17 @@ Type *pointer_to(Type *base) {
 }
 
 Type *array_of(Type *base, int len) {
-  Type *ty = calloc(1, sizeof(Type));
-  ty->kind = TY_ARRAY;
-  ty->size = base->size * len;
-  ty->base = base;
+  Type *ty      = calloc(1, sizeof(Type));
+  ty->kind      = TY_ARRAY;
+  ty->size      = base->size * len;
+  ty->base      = base;
   ty->array_len = len;
   return ty;
 }
 
 void add_type(Node *node) {
-  if (!node || node->ty) return;
+  if (!node || node->ty)
+    return;
 
   add_type(node->lhs);
   add_type(node->rhs);

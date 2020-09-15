@@ -1,6 +1,8 @@
 #include "kmcc.h"
 
-int align_to(int n, int align) { return (n + align - 1) & ~(align - 1); }
+int align_to(int n, int align) {
+  return (n + align - 1) & ~(align - 1);
+}
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -9,8 +11,8 @@ int main(int argc, char **argv) {
   }
 
   // トークナイズしてパースする．
-  user_input = argv[1];
-  token = tokenize();
+  user_input    = argv[1];
+  token         = tokenize();
   Program *prog = program();
 
   for (Function *fn = prog->fns; fn; fn = fn->next) {

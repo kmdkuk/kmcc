@@ -2,9 +2,11 @@
 
 // ABI規定の引数
 // 1bitレジスタ
-static char *argreg1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *argreg1[]
+    = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 // 8bitレジスタ
-static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *argreg8[]
+    = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static int labelseq = 1;
 static char *func_name;
@@ -161,8 +163,8 @@ void gen(Node *node) {
         printf("  pop %s\n", argreg8[i]);
       }
       // We need to align RSP to a 16 byte boundary before
-      // calling a function because it is an ABI requirement.
-      // RAX is set to 0 for variadic function.
+      // calling a function because it is an ABI
+      // requirement. RAX is set to 0 for variadic function.
       int seq = labelseq++;
       printf("  mov rax, rsp\n");
       printf("  and rax, 15\n");
@@ -262,10 +264,12 @@ static void emit_data(Program *prog) {
 static void load_arg(Var *var, int idx) {
   int size = var->ty->size;
   if (size == 1) {
-    printf("  mov [rbp-%d], %s\n", var->offset, argreg1[idx]);
+    printf(
+        "  mov [rbp-%d], %s\n", var->offset, argreg1[idx]);
   } else {
     assert(size == 8);
-    printf("  mov [rbp-%d], %s\n", var->offset, argreg8[idx]);
+    printf(
+        "  mov [rbp-%d], %s\n", var->offset, argreg8[idx]);
   }
 }
 
@@ -289,7 +293,8 @@ static void emit_text(Program *prog) {
     }
 
     // コードの実行
-    for (Node *node = fn->node; node; node = node->next) gen(node);
+    for (Node *node = fn->node; node; node = node->next)
+      gen(node);
 
     // エピローグ
     printf(".L.return.%s:\n", func_name);

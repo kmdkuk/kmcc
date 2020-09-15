@@ -39,8 +39,8 @@ void error_tok(Token *tok, char *fmt, ...) {
 
 // 現在のトークンがsとマッチした場合，Tokenを返す．
 Token *peek(char *s) {
-  if (token->kind != TK_RESERVED || strlen(s) != token->len ||
-      strncmp(token->str, s, token->len)) {
+  if (token->kind != TK_RESERVED || strlen(s) != token->len
+      || strncmp(token->str, s, token->len)) {
     return NULL;
   }
   return token;
@@ -49,54 +49,63 @@ Token *peek(char *s) {
 // 次のトークンが期待している記号のときは，トークンを1つ読み進めて
 // 真を返す．それ以外の場合は偽を返す．
 Token *consume(char *op) {
-  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-      memcmp(token->str, op, token->len))
+  if (token->kind != TK_RESERVED || strlen(op) != token->len
+      || memcmp(token->str, op, token->len))
     return NULL;
   Token *t = token;
-  token = token->next;
+  token    = token->next;
   return t;
 }
 
 Token *consume_ident() {
-  if (token->kind != TK_IDENT) return NULL;
+  if (token->kind != TK_IDENT)
+    return NULL;
   Token *t = token;
-  token = token->next;
+  token    = token->next;
   return t;
 }
 
 // 次のトークンが期待している記号のときには，トークンを1つ読み進める．
 // それ以外の場合には，エラーを報告する．
 void expect(char *s) {
-  if (!peek(s)) error_tok(token, "'%s'ではありません．", s);
+  if (!peek(s))
+    error_tok(token, "'%s'ではありません．", s);
   token = token->next;
 }
 
 // 次のトークンが数値の場合，トークンを1つ読み進めてその数値を返す，
 // それ以外の場合にはエラーを報告する．
 int expect_number() {
-  if (token->kind != TK_NUM) error_tok(token, "数ではありません．");
+  if (token->kind != TK_NUM)
+    error_tok(token, "数ではありません．");
   int val = token->val;
-  token = token->next;
+  token   = token->next;
   return val;
 }
 
 // 現在のトークンがTK_IDENTであることを確認する．
 char *expect_ident() {
-  if (token->kind != TK_IDENT) error_tok(token, "識別子ではありません．");
+  if (token->kind != TK_IDENT)
+    error_tok(token, "識別子ではありません．");
   char *s = duplicate(token->str, token->len);
-  token = token->next;
+  token   = token->next;
   return s;
 }
 
-bool at_eof() { return token->kind == TK_EOF; }
+bool at_eof() {
+  return token->kind == TK_EOF;
+}
 
 // 新しいトークンを作成してcurに繋げる．
-Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
+Token *new_token(TokenKind kind,
+                 Token *cur,
+                 char *str,
+                 int len) {
   Token *tok = calloc(1, sizeof(Token));
-  tok->kind = kind;
-  tok->str = str;
-  tok->len = len;
-  cur->next = tok;
+  tok->kind  = kind;
+  tok->str   = str;
+  tok->len   = len;
+  cur->next  = tok;
   return tok;
 }
 
@@ -105,19 +114,29 @@ static bool startswith(char *p, char *q) {
 }
 
 static bool is_alpha(char c) {
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+         || c == '_';
 }
 
-static bool is_alnum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
+static bool is_alnum(char c) {
+  return is_alpha(c) || ('0' <= c && c <= '9');
+}
 
 static char *starts_with_reserved(char *p) {
   // Keyword
-  static char *kw[] = {"return", "if",  "else", "while",
-                       "for",    "int", "char", "sizeof"};
+  static char *kw[] = {"return",
+                       "if",
+                       "else",
+                       "while",
+                       "for",
+                       "int",
+                       "char",
+                       "sizeof"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);
-    if (startswith(p, kw[i]) && !is_alnum(p[len])) return kw[i];
+    if (startswith(p, kw[i]) && !is_alnum(p[len]))
+      return kw[i];
   }
 
   // Multi-letter punctuator
@@ -137,7 +156,7 @@ static char *starts_with_reserved(char *p) {
 Token *tokenize() {
   char *p = user_input;
   Token head;
-  head.next = NULL;
+  head.next  = NULL;
   Token *cur = &head;
 
   while (*p) {
@@ -152,7 +171,7 @@ Token *tokenize() {
     if (kw) {
       // printf("find kewords %s\n", kw);
       int len = strlen(kw);
-      cur = new_token(TK_RESERVED, cur, p, len);
+      cur     = new_token(TK_RESERVED, cur, p, len);
       p += len;
       continue;
     }
@@ -173,8 +192,8 @@ Token *tokenize() {
 
     // Integer literal
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 0);
-      char *q = p;
+      cur      = new_token(TK_NUM, cur, p, 0);
+      char *q  = p;
       cur->val = strtol(p, &p, 10);
       cur->len = p - q;
       continue;

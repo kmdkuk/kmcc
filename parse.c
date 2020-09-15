@@ -10,8 +10,8 @@ static VarList *globals;
 static Var *find_var(Token *tok) {
   for (VarList *vl = locals; vl; vl = vl->next) {
     Var *var = vl->var;
-    if (strlen(var->name) == tok->len &&
-        !strncmp(tok->str, var->name, tok->len)) {
+    if (strlen(var->name) == tok->len
+        && !strncmp(tok->str, var->name, tok->len)) {
       return var;
     }
   }
@@ -19,8 +19,8 @@ static Var *find_var(Token *tok) {
   // ローカル変数で発見できなければ，グローバル変数を探す．
   for (VarList *vl = globals; vl; vl = vl->next) {
     Var *var = vl->var;
-    if (strlen(var->name) == tok->len &&
-        !strncmp(tok->str, var->name, tok->len)) {
+    if (strlen(var->name) == tok->len
+        && !strncmp(tok->str, var->name, tok->len)) {
       return var;
     }
   }
@@ -30,39 +30,44 @@ static Var *find_var(Token *tok) {
 static Node *new_node(NodeKind kind, Token *tok) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
-  node->tok = tok;
+  node->tok  = tok;
   return node;
 }
 
-static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok) {
+static Node *new_binary(NodeKind kind,
+                        Node *lhs,
+                        Node *rhs,
+                        Token *tok) {
   Node *node = new_node(kind, tok);
-  node->lhs = lhs;
-  node->rhs = rhs;
+  node->lhs  = lhs;
+  node->rhs  = rhs;
   return node;
 }
 
-static Node *new_unary(NodeKind kind, Node *expr, Token *tok) {
+static Node *new_unary(NodeKind kind,
+                       Node *expr,
+                       Token *tok) {
   Node *node = new_node(kind, tok);
-  node->lhs = expr;
+  node->lhs  = expr;
   return node;
 }
 
 static Node *new_num(int val, Token *tok) {
   Node *node = new_node(ND_NUM, tok);
-  node->val = val;
+  node->val  = val;
   return node;
 }
 
 static Node *new_var_node(Var *var, Token *tok) {
   Node *node = new_node(ND_VAR, tok);
-  node->var = var;
+  node->var  = var;
   return node;
 }
 
 static Var *new_var(char *name, Type *ty, bool is_local) {
-  Var *var = calloc(1, sizeof(Var));
-  var->name = name;
-  var->ty = ty;
+  Var *var      = calloc(1, sizeof(Var));
+  var->name     = name;
+  var->ty       = ty;
   var->is_local = is_local;
   return var;
 }
@@ -71,9 +76,9 @@ static Var *new_lvar(char *name, Type *ty) {
   Var *var = new_var(name, ty, true);
 
   VarList *vl = calloc(1, sizeof(VarList));
-  vl->var = var;
-  vl->next = locals;
-  locals = vl;
+  vl->var     = var;
+  vl->next    = locals;
+  locals      = vl;
   return var;
 }
 
@@ -81,9 +86,9 @@ static Var *new_gvar(char *name, Type *ty) {
   Var *var = new_var(name, ty, false);
 
   VarList *vl = calloc(1, sizeof(VarList));
-  vl->var = var;
-  vl->next = globals;
-  globals = vl;
+  vl->var     = var;
+  vl->next    = globals;
+  globals     = vl;
   return var;
 }
 
@@ -110,7 +115,7 @@ static bool is_function() {
   basetype();
   // 識別子+( と続いていたら，関数
   bool isfunc = consume_ident() && consume("(");
-  token = tok;
+  token       = tok;
   return isfunc;
 }
 
@@ -118,12 +123,12 @@ static bool is_function() {
 Program *program() {
   Function head = {};
   Function *cur = &head;
-  globals = NULL;
+  globals       = NULL;
 
   while (!at_eof()) {
     if (is_function()) {
       cur->next = function();
-      cur = cur->next;
+      cur       = cur->next;
     } else {
       global_var();
     }
@@ -131,7 +136,7 @@ Program *program() {
 
   Program *prog = calloc(1, sizeof(Program));
   prog->globals = globals;
-  prog->fns = head.next;
+  prog->fns     = head.next;
   return prog;
 }
 
@@ -161,25 +166,26 @@ static Type *read_type_suffix(Type *base) {
 }
 
 static VarList *read_func_param() {
-  Type *ty = basetype();
+  Type *ty   = basetype();
   char *name = expect_ident();
-  ty = read_type_suffix(ty);
+  ty         = read_type_suffix(ty);
 
   VarList *vl = calloc(1, sizeof(VarList));
-  vl->var = new_lvar(name, ty);
+  vl->var     = new_lvar(name, ty);
   return vl;
 }
 
 static VarList *read_func_params() {
-  if (consume(")")) return NULL;
+  if (consume(")"))
+    return NULL;
 
   VarList *head = read_func_param();
-  VarList *cur = head;
+  VarList *cur  = head;
 
   while (!consume(")")) {
     expect(",");
     cur->next = read_func_param();
-    cur = cur->next;
+    cur       = cur->next;
   }
 
   return head;
@@ -203,19 +209,19 @@ Function *function() {
 
   while (!consume("}")) {
     cur->next = stmt();
-    cur = cur->next;
+    cur       = cur->next;
   }
 
-  fn->node = head.next;
+  fn->node   = head.next;
   fn->locals = locals;
   return fn;
 }
 
 // global_var = basetype ident ("[" num "]")* ";"
 static void global_var() {
-  Type *ty = basetype();
+  Type *ty   = basetype();
   char *name = expect_ident();
-  ty = read_type_suffix(ty);
+  ty         = read_type_suffix(ty);
   expect(";");
   new_gvar(name, ty);
 }
@@ -223,10 +229,10 @@ static void global_var() {
 // declartion = basetype ident ("[" num "]")* ("=" expr) ";"
 static Node *declartion() {
   Token *tok = token;
-  Type *ty = basetype();
+  Type *ty   = basetype();
   char *name = expect_ident();
-  ty = read_type_suffix(ty);
-  Var *var = new_lvar(name, ty);
+  ty         = read_type_suffix(ty);
+  Var *var   = new_lvar(name, ty);
 
   if (consume(";")) {
     return new_node(ND_NULL, tok);
@@ -246,7 +252,9 @@ static Node *read_expr_stmt(void) {
 }
 
 // 次のトークンが型を表していればtrue
-static bool is_typename() { return peek("char") || peek("int"); }
+static bool is_typename() {
+  return peek("char") || peek("int");
+}
 
 static Node *stmt() {
   Node *node = stmt2();
@@ -314,7 +322,7 @@ Node *stmt2() {
 
     while (!consume("}")) {
       cur->next = stmt();
-      cur = cur->next;
+      cur       = cur->next;
     }
 
     Node *node = new_node(ND_BLOCK, tok);
@@ -332,16 +340,20 @@ Node *stmt2() {
 }
 
 // expr = equality
-Node *expr() { return assign(); }
+Node *expr() {
+  return assign();
+}
 
 Node *assign() {
   Node *node = equality();
   Token *tok;
-  if ((tok = consume("="))) node = new_binary(ND_ASSIGN, node, assign(), tok);
+  if ((tok = consume("=")))
+    node = new_binary(ND_ASSIGN, node, assign(), tok);
   return node;
 }
 
-// equality = relational ("==" relational | "!=" relational)*
+// equality = relational ("==" relational | "!="
+// relational)*
 Node *equality() {
   Node *node = relational();
   Token *tok;
@@ -443,11 +455,15 @@ Node *mul() {
 //       | postfix
 Node *unary() {
   Token *tok;
-  if (consume("+")) return unary();
+  if (consume("+"))
+    return unary();
   if ((tok = consume("-")))
-    return new_binary(ND_SUB, new_num(0, tok), unary(), tok);
-  if ((tok = consume("&"))) return new_unary(ND_ADDR, unary(), tok);
-  if ((tok = consume("*"))) return new_unary(ND_DEREF, unary(), tok);
+    return new_binary(
+        ND_SUB, new_num(0, tok), unary(), tok);
+  if ((tok = consume("&")))
+    return new_unary(ND_ADDR, unary(), tok);
+  if ((tok = consume("*")))
+    return new_unary(ND_DEREF, unary(), tok);
   return postfix();
 }
 
@@ -474,13 +490,14 @@ char *duplicate(char *str, size_t len) {
 
 // func-args = "(" (assign ("," assign)*)? ")"
 static Node *func_args(void) {
-  if (consume(")")) return NULL;
+  if (consume(")"))
+    return NULL;
 
   Node *head = assign();
-  Node *cur = head;
+  Node *cur  = head;
   while (consume(",")) {
     cur->next = assign();
-    cur = cur->next;
+    cur       = cur->next;
   }
   expect(")");
   return head;
@@ -509,9 +526,9 @@ Node *primary() {
   if ((tok = consume_ident())) {
     // Function call
     if (consume("(")) {
-      Node *node = new_node(ND_FUNC_CALL, tok);
+      Node *node      = new_node(ND_FUNC_CALL, tok);
       node->func_name = duplicate(tok->str, tok->len);
-      node->args = func_args();
+      node->args      = func_args();
       return node;
     }
 
@@ -524,7 +541,8 @@ Node *primary() {
   }
 
   tok = token;
-  if (tok->kind != TK_NUM) error_tok(tok, "expected expression");
+  if (tok->kind != TK_NUM)
+    error_tok(tok, "expected expression");
   return new_num(expect_number(), tok);
 }
 
