@@ -488,6 +488,29 @@ static Node *postfix() {
   return node;
 }
 
+// stmt-expr = "(" "{" stmt stmt* "}" ")"
+//
+// Statement expression は， GNUCの拡張です．
+static Node *stmt_expr(Token *tok) {
+  Node *node = new_node(ND_STMT_EXPR, tok);
+  node->body = stmt();
+  Node *cur  = node->body;
+
+  while (!consume("}")) {
+    cur->next = stmt();
+    cur       = cur->next;
+  }
+  expect(")");
+
+  if (cur->kind != ND_EXPR_STMT) {
+    error_tok(
+        cur->tok,
+        "stmt expr はvoidを返すことをサポートしてません．");
+  }
+  memcpy(cur, cur->lhs, sizeof(Node));
+  return node;
+}
+
 char *duplicate(char *str, size_t len) {
   char *buffer = calloc(len + 1, sizeof(char));
   memcpy(buffer, str, len);
@@ -510,7 +533,8 @@ static Node *func_args(void) {
   return head;
 }
 
-// primary = "(" expr ")"
+// primary = "(" "{" stmt-expr-tail
+//         | "(" expr ")"
 //         | "sizeof" unary
 //         | ident func-args?
 //         | str
@@ -519,7 +543,10 @@ Node *primary() {
   Token *tok;
 
   // 次のトークンが"("なら，"(" expr ")"のはず
-  if (consume("(")) {
+  if ((tok = consume("("))) {
+    if (consume("{")) {
+      return stmt_expr(tok);
+    }
     Node *node = expr();
     expect(")");
     return node;
