@@ -49,6 +49,7 @@ Token *new_token(TokenKind kind,
                  int len);
 Token *tokenize();
 
+extern char *filename;
 extern char *user_input;
 extern Token *token;
 
