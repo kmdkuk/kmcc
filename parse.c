@@ -5,19 +5,11 @@
 // すべてのローカル変数
 static VarList *locals;
 static VarList *globals;
+static VarList *scope;
 
 // 変数を名前で検索する．見つからなかった場合は，NULLを返す．
 static Var *find_var(Token *tok) {
-  for (VarList *vl = locals; vl; vl = vl->next) {
-    Var *var = vl->var;
-    if (strlen(var->name) == tok->len
-        && !strncmp(tok->str, var->name, tok->len)) {
-      return var;
-    }
-  }
-
-  // ローカル変数で発見できなければ，グローバル変数を探す．
-  for (VarList *vl = globals; vl; vl = vl->next) {
+  for (VarList *vl = scope; vl; vl = vl->next) {
     Var *var = vl->var;
     if (strlen(var->name) == tok->len
         && !strncmp(tok->str, var->name, tok->len)) {
@@ -69,6 +61,11 @@ static Var *new_var(char *name, Type *ty, bool is_local) {
   var->name     = name;
   var->ty       = ty;
   var->is_local = is_local;
+
+  VarList *sc = calloc(1, sizeof(VarList));
+  sc->var     = var;
+  sc->next    = scope;
+  scope       = sc;
   return var;
 }
 
@@ -208,7 +205,10 @@ Function *function() {
   basetype();
   fn->name = expect_ident();
   expect("(");
-  fn->params = read_func_params();
+
+  // 現状のscopeを一時保存
+  VarList *sc = scope;
+  fn->params  = read_func_params();
   expect("{");
 
   Node head = {};
@@ -218,6 +218,9 @@ Function *function() {
     cur->next = stmt();
     cur       = cur->next;
   }
+  // 一時保存していたscopeを戻して,
+  // 一時保存からここまでで作られた変数の情報を開放
+  scope = sc;
 
   fn->node   = head.next;
   fn->locals = locals;
@@ -327,10 +330,14 @@ Node *stmt2() {
     Node head = {};
     Node *cur = &head;
 
+    // ブロックには入る前までの変数の宣言状態を一時保存
+    VarList *sc = scope;
     while (!consume("}")) {
       cur->next = stmt();
       cur       = cur->next;
     }
+    // ブロックから出たので，一時保存していた変数の宣言状態を復旧
+    scope = sc;
 
     Node *node = new_node(ND_BLOCK, tok);
     node->body = head.next;
@@ -492,6 +499,9 @@ static Node *postfix() {
 //
 // Statement expression は， GNUCの拡張です．
 static Node *stmt_expr(Token *tok) {
+  // stmt_exprに入る前までの変数の状態を一時保存
+  VarList *sc = scope;
+
   Node *node = new_node(ND_STMT_EXPR, tok);
   node->body = stmt();
   Node *cur  = node->body;
@@ -501,6 +511,9 @@ static Node *stmt_expr(Token *tok) {
     cur       = cur->next;
   }
   expect(")");
+
+  // スコープから外れる際に，一時保存していた変数の状態を復旧
+  scope = sc;
 
   if (cur->kind != ND_EXPR_STMT) {
     error_tok(
