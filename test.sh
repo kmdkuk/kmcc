@@ -142,6 +142,20 @@ cat <<'EOS' | xargs --no-run-if-empty -n2 -P0 ./assert.sh
 99 'int main() { return "abc"[2]; }'
 0 'int main() { return "abc"[3]; }'
 4 'int main() { return sizeof("abc"); }'
+
+7 'int main() { return "\a"[0]; }'
+8 'int main() { return "\b"[0]; }'
+9 'int main() { return "\t"[0]; }'
+10 'int main() { return "\n"[0]; }'
+11 'int main() { return "\v"[0]; }'
+12 'int main() { return "\f"[0]; }'
+13 'int main() { return "\r"[0]; }'
+27 'int main() { return "\e"[0]; }'
+0 'int main() { return "\0"[0]; }'
+
+106 'int main() { return "\j"[0]; }'
+107 'int main() { return "\k"[0]; }'
+108 'int main() { return "\l"[0]; }'
 EOS
 
 if [ $? -gt 0 ]; then
