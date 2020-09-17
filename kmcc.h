@@ -175,6 +175,7 @@ typedef enum {
 struct Type {
   TypeKind kind;
   int size;  // sizeof() value
+  int align;
   Type *base;
   int array_len;
   Member *members;  // struct
@@ -192,6 +193,7 @@ extern Type *char_type;
 extern Type *int_type;
 
 bool is_integer(Type *ty);
+int align_to(int n, int align);
 Type *pointer_to(Type *base);
 Type *array_of(Type *base, int size);
 void add_type(Node *node);
