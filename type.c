@@ -1,5 +1,8 @@
 #include "kmcc.h"
 
+// char_type->kind = TY_CHAR
+// char_type->size = 1
+// char_type->align = 1
 Type *char_type = &(Type){TY_CHAR, 1, 1};
 Type *int_type  = &(Type){TY_INT, 8, 8};
 
@@ -7,7 +10,16 @@ bool is_integer(Type *ty) {
   return ty->kind == TY_CHAR || ty->kind == TY_INT;
 }
 
+// nは現在のoffset
+// alignで指定したサイズに整えた値を出す
+// n = 1, align = 8 return 8;
 int align_to(int n, int align) {
+  // ~ はbit反転演算子
+  // & はbit演算のAND
+  // n = 14; align = 8のとき
+  // lhs = n + align - 1 = 21 = 100101
+  // rhs = ~(align - 1) = ~7 = ~(000111) = 111000
+  // return = 100101 & 111000 = 100000 = 16
   return (n + align - 1) & ~(align - 1);
 }
 
