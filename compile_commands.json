@@ -6,11 +6,24 @@
             "-std=c11",
             "-g",
             "-o",
-            "main.o",
-            "main.c"
+            "parse.o",
+            "parse.c"
         ],
         "directory": "/usr/src/kmcc",
-        "file": "main.c"
+        "file": "parse.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-std=c11",
+            "-g",
+            "-o",
+            "type.o",
+            "type.c"
+        ],
+        "directory": "/usr/src/kmcc",
+        "file": "type.c"
     },
     {
         "arguments": [
@@ -32,11 +45,11 @@
             "-std=c11",
             "-g",
             "-o",
-            "parse.o",
-            "parse.c"
+            "main.o",
+            "main.c"
         ],
         "directory": "/usr/src/kmcc",
-        "file": "parse.c"
+        "file": "main.c"
     },
     {
         "arguments": [
@@ -50,18 +63,5 @@
         ],
         "directory": "/usr/src/kmcc",
         "file": "tokenize.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-std=c11",
-            "-g",
-            "-o",
-            "type.o",
-            "type.c"
-        ],
-        "directory": "/usr/src/kmcc",
-        "file": "type.c"
     }
 ]

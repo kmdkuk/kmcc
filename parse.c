@@ -212,10 +212,9 @@ Program *program() {
   return prog;
 }
 
-// basetype = ("char"
-//            | "int"
-//            | struct_decl
-//            | typedef-name)"*"*
+// basetype = type "*"*
+// type = "char" | "short" | "int" | "long" | struct-decl
+//      | typedef-name
 static Type *basetype() {
   if (!is_typename()) {
     error_tok(token, "typename expected");
@@ -223,8 +222,12 @@ static Type *basetype() {
   Type *ty;
   if (consume("char")) {
     ty = char_type;
+  } else if (consume("short")) {
+    ty = short_type;
   } else if (consume("int")) {
     ty = int_type;
+  } else if (consume("long")) {
+    ty = long_type;
   } else if (consume("struct")) {
     ty = struct_decl();
   } else {
@@ -412,7 +415,8 @@ static Node *read_expr_stmt(void) {
 
 // 次のトークンが型を表していればtrue
 static bool is_typename() {
-  return peek("char") || peek("int") || peek("struct")
+  return peek("char") || peek("short") || peek("int")
+         || peek("long") || peek("struct")
          || find_typedef(token);
 }
 
