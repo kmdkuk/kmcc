@@ -163,6 +163,8 @@ static char *new_label() {
 
 static Function *function();
 static Type *basetype();
+static Type *declarator(Type *ty, char **name);
+static Type *type_suffix(Type *ty);
 static Type *struct_decl();
 static Member *struct_member();
 static void global_var();
@@ -184,10 +186,14 @@ static Node *primary();
 // グローバル変数化をトークンを先読みして判断する．
 static bool is_function() {
   Token *tok = token;
-  basetype();
+
+  Type *ty   = basetype();
+  char *name = NULL;
+  declarator(ty, &name);
   // 識別子+( と続いていたら，関数
-  bool isfunc = consume_ident() && consume("(");
-  token       = tok;
+  bool isfunc = name && consume("(");
+
+  token = tok;
   return isfunc;
 }
 
@@ -212,43 +218,53 @@ Program *program() {
   return prog;
 }
 
-// basetype = type "*"*
-// type = "char" | "short" | "int" | "long" | struct-decl
-//      | typedef-name
+// basetype = builtin-type | struct-decl | typedef-name
+// builtin-type = "char" | "short" | "int" | "long"
 static Type *basetype() {
   if (!is_typename()) {
     error_tok(token, "typename expected");
   }
-  Type *ty;
-  if (consume("char")) {
-    ty = char_type;
-  } else if (consume("short")) {
-    ty = short_type;
-  } else if (consume("int")) {
-    ty = int_type;
-  } else if (consume("long")) {
-    ty = long_type;
-  } else if (consume("struct")) {
-    ty = struct_decl();
-  } else {
-    ty = find_var(consume_ident())->type_def;
-  }
-  assert(ty);
 
+  if (consume("char")) {
+    return char_type;
+  } else if (consume("short")) {
+    return short_type;
+  } else if (consume("int")) {
+    return int_type;
+  } else if (consume("long")) {
+    return long_type;
+  } else if (consume("struct")) {
+    return struct_decl();
+  }
+  return find_var(consume_ident())->type_def;
+}
+
+// declarator = "*"* ("(" declarator ")" | ident)
+// type-suffix
+static Type *declarator(Type *ty, char **name) {
   while (consume("*")) {
     ty = pointer_to(ty);
   }
-  return ty;
+  if (consume("(")) {
+    Type *placeholder = calloc(1, sizeof(Type));
+    Type *new_ty      = declarator(placeholder, name);
+    expect(")");
+    memcpy(placeholder, type_suffix(ty), sizeof(Type));
+    return new_ty;
+  }
+  *name = expect_ident();
+  return type_suffix(ty);
 }
 
-static Type *read_type_suffix(Type *base) {
+// type-suffix = ("[" num "]" type-suffix)?
+static Type *type_suffix(Type *ty) {
   if (!consume("[")) {
-    return base;
+    return ty;
   }
   int array_size = expect_number();
   expect("]");
-  base = read_type_suffix(base);
-  return array_of(base, array_size);
+  ty = type_suffix(ty);
+  return array_of(ty, array_size);
 }
 
 static void push_tag_scope(Token *tok, Type *ty) {
@@ -308,18 +324,23 @@ static Type *struct_decl() {
 
 // struct-member = basetype ident ("[" num "]")* ";"
 static Member *struct_member() {
-  Member *mem = calloc(1, sizeof(Member));
-  mem->ty     = basetype();
-  mem->name   = expect_ident();
-  mem->ty     = read_type_suffix(mem->ty);
+  Type *ty   = basetype();
+  char *name = NULL;
+  ty         = declarator(ty, &name);
+  ty         = type_suffix(ty);
   expect(";");
+
+  Member *mem = calloc(1, sizeof(Member));
+  mem->name   = name;
+  mem->ty     = ty;
   return mem;
 }
 
 static VarList *read_func_param() {
   Type *ty   = basetype();
-  char *name = expect_ident();
-  ty         = read_type_suffix(ty);
+  char *name = NULL;
+  ty         = declarator(ty, &name);
+  ty         = type_suffix(ty);
 
   VarList *vl = calloc(1, sizeof(VarList));
   vl->var     = new_lvar(name, ty);
@@ -342,15 +363,19 @@ static VarList *read_func_params() {
   return head;
 }
 
-// function = basetype ident "(" params? ")" "{" stmt* "}"
+// function = basetype declarator "(" params? ")"
+//            "{" stmt* "}"
 // params   = param ("," param)*
-// param    = basetype ident
+// param    = basetype declarator type-suffix
 Function *function() {
   locals = NULL;
 
+  Type *ty   = basetype();
+  char *name = NULL;
+  declarator(ty, &name);
+
   Function *fn = calloc(1, sizeof(Function));
-  basetype();
-  fn->name = expect_ident();
+  fn->name     = name;
   expect("(");
 
   // 現状のscopeを一時保存
@@ -374,16 +399,18 @@ Function *function() {
   return fn;
 }
 
-// global_var = basetype ident ("[" num "]")* ";"
+// global_var = basetype declarator type-suffix ";"
 static void global_var() {
   Type *ty   = basetype();
-  char *name = expect_ident();
-  ty         = read_type_suffix(ty);
+  char *name = NULL;
+  ty         = declarator(ty, &name);
+  ty         = type_suffix(ty);
   expect(";");
   new_gvar(name, ty);
 }
 
-// declartion = basetype ident ("[" num "]")* ("=" expr) ";"
+// declartion = basetype declarator type-suffix
+//              ("=" expr)? ";"
 //            | basetype ";"
 static Node *declartion() {
   Token *tok = token;
@@ -392,8 +419,9 @@ static Node *declartion() {
     return new_node(ND_NULL, tok);
   }
 
-  char *name = expect_ident();
-  ty         = read_type_suffix(ty);
+  char *name = NULL;
+  ty         = declarator(ty, &name);
+  ty         = type_suffix(ty);
   Var *var   = new_lvar(name, ty);
 
   if (consume(";")) {
@@ -431,7 +459,7 @@ static Node *stmt() {
 //       | "while" "(" expr ")" stmt
 //       | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //       | "{" stmt* "}"
-//       | "typedef" basetype ident ("[ num "]")* ";"
+//       | "typedef" basetype declarator type-suffix ";"
 //       | declaration
 //       | expr ";"
 Node *stmt2() {
@@ -502,9 +530,11 @@ Node *stmt2() {
 
   if ((tok = consume("typedef"))) {
     Type *ty   = basetype();
-    char *name = expect_ident();
-    ty         = read_type_suffix(ty);
+    char *name = NULL;
+    ty         = declarator(ty, &name);
+    ty         = type_suffix(ty);
     expect(";");
+
     push_scope(name)->type_def = ty;
     return new_node(ND_NULL, tok);
   }
