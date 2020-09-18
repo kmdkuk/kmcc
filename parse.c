@@ -1,5 +1,14 @@
 #include "kmcc.h"
 
+// ローカル変数，グローバル変数，typedefのためのスコープ
+typedef struct VarScope VarScope;
+struct VarScope {
+  VarScope *next;
+  char *name;
+  Var *var;
+  Type *type_def;
+};
+
 // struct tagsのためのスコープ
 typedef struct TagScope TagScope;
 struct TagScope {
@@ -9,7 +18,7 @@ struct TagScope {
 };
 
 typedef struct {
-  VarList *var_scope;
+  VarScope *var_scope;
   TagScope *tag_scope;
 } Scope;
 
@@ -20,9 +29,9 @@ static VarList *locals;
 static VarList *globals;
 
 // Cには2つのブロックスコープがある．
-// 変数と，構造体のタグ
+// 変数/typedefと，構造体のタグ
 // 以下2つの変数は，現在のスコープ情報を保持
-VarList *var_scope;
+static VarScope *var_scope;
 static TagScope *tag_scope;
 
 // sc は，それまでのスコープ情報を一時保存
@@ -40,12 +49,11 @@ static void leave_scope(Scope *sc) {
 }
 
 // 変数を名前で検索する．見つからなかった場合は，NULLを返す．
-static Var *find_var(Token *tok) {
-  for (VarList *vl = var_scope; vl; vl = vl->next) {
-    Var *var = vl->var;
-    if (strlen(var->name) == tok->len
-        && !strncmp(tok->str, var->name, tok->len)) {
-      return var;
+static VarScope *find_var(Token *tok) {
+  for (VarScope *sc = var_scope; sc; sc = sc->next) {
+    if (strlen(sc->name) == tok->len
+        && !strncmp(tok->str, sc->name, tok->len)) {
+      return sc;
     }
   }
   return NULL;
@@ -98,21 +106,25 @@ static Node *new_var_node(Var *var, Token *tok) {
   return node;
 }
 
+static VarScope *push_scope(char *name) {
+  VarScope *sc = calloc(1, sizeof(VarScope));
+  sc->name     = name;
+  sc->next     = var_scope;
+  var_scope    = sc;
+  return sc;
+}
+
 static Var *new_var(char *name, Type *ty, bool is_local) {
   Var *var      = calloc(1, sizeof(Var));
   var->name     = name;
   var->ty       = ty;
   var->is_local = is_local;
-
-  VarList *sc = calloc(1, sizeof(VarList));
-  sc->var     = var;
-  sc->next    = var_scope;
-  var_scope   = sc;
   return var;
 }
 
 static Var *new_lvar(char *name, Type *ty) {
-  Var *var = new_var(name, ty, true);
+  Var *var              = new_var(name, ty, true);
+  push_scope(name)->var = var;
 
   VarList *vl = calloc(1, sizeof(VarList));
   vl->var     = var;
@@ -122,13 +134,24 @@ static Var *new_lvar(char *name, Type *ty) {
 }
 
 static Var *new_gvar(char *name, Type *ty) {
-  Var *var = new_var(name, ty, false);
+  Var *var              = new_var(name, ty, false);
+  push_scope(name)->var = var;
 
   VarList *vl = calloc(1, sizeof(VarList));
   vl->var     = var;
   vl->next    = globals;
   globals     = vl;
   return var;
+}
+
+static Type *find_typedef(Token *tok) {
+  if (tok->kind == TK_IDENT) {
+    VarScope *sc = find_var(tok);
+    if (sc) {
+      return sc->type_def;
+    }
+  }
+  return NULL;
 }
 
 static char *new_label() {
@@ -189,7 +212,10 @@ Program *program() {
   return prog;
 }
 
-// basetype = ("char" | "int" | struct_decl) "*"*
+// basetype = ("char"
+//            | "int"
+//            | struct_decl
+//            | typedef-name)"*"*
 static Type *basetype() {
   if (!is_typename()) {
     error_tok(token, "typename expected");
@@ -199,9 +225,13 @@ static Type *basetype() {
     ty = char_type;
   } else if (consume("int")) {
     ty = int_type;
-  } else {
+  } else if (consume("struct")) {
     ty = struct_decl();
+  } else {
+    ty = find_var(consume_ident())->type_def;
   }
+  assert(ty);
+
   while (consume("*")) {
     ty = pointer_to(ty);
   }
@@ -229,8 +259,6 @@ static void push_tag_scope(Token *tok, Type *ty) {
 // struct-decl = "struct" idnet
 //             | "struct" ident? "{" struct-member "}"
 static Type *struct_decl() {
-  expect("struct");
-
   // Read struct tag
   Token *tag = consume_ident();
   if (tag && !peek("{")) {
@@ -384,7 +412,8 @@ static Node *read_expr_stmt(void) {
 
 // 次のトークンが型を表していればtrue
 static bool is_typename() {
-  return peek("char") || peek("int") || peek("struct");
+  return peek("char") || peek("int") || peek("struct")
+         || find_typedef(token);
 }
 
 static Node *stmt() {
@@ -398,6 +427,8 @@ static Node *stmt() {
 //       | "while" "(" expr ")" stmt
 //       | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //       | "{" stmt* "}"
+//       | "typedef" basetype ident ("[ num "]")* ";"
+//       | declaration
 //       | expr ";"
 Node *stmt2() {
   Token *tok;
@@ -463,6 +494,15 @@ Node *stmt2() {
     Node *node = new_node(ND_BLOCK, tok);
     node->body = head.next;
     return node;
+  }
+
+  if ((tok = consume("typedef"))) {
+    Type *ty   = basetype();
+    char *name = expect_ident();
+    ty         = read_type_suffix(ty);
+    expect(";");
+    push_scope(name)->type_def = ty;
+    return new_node(ND_NULL, tok);
   }
 
   if (is_typename()) {
@@ -744,12 +784,12 @@ Node *primary() {
       return node;
     }
 
-    // Identifier
-    Var *var = find_var(tok);
-    if (!var) {
-      error_tok(tok, "undefined variable");
+    // 変数
+    VarScope *sc = find_var(tok);
+    if (sc && sc->var) {
+      return new_var_node(sc->var, tok);
     }
-    return new_var_node(var, tok);
+    error_tok(tok, "undefined variable");
   }
 
   tok = token;
