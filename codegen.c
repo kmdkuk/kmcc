@@ -4,6 +4,9 @@
 // 1bitレジスタ
 static char *argreg1[]
     = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+// 4bit レジスタ
+static char *argreg4[]
+    = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 // 8bitレジスタ
 static char *argreg8[]
     = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
@@ -53,7 +56,10 @@ static void load(Type *ty) {
   printf("  pop rax\n");
   if (ty->size == 1) {
     printf("  movsx rax, byte ptr [rax]\n");
+  } else if (ty->size == 4) {
+    printf("  movsxd rax, dword ptr [rax]\n");
   } else {
+    assert(ty->size == 8);
     printf("  mov rax, [rax]\n");
   }
   printf("  push rax\n");
@@ -65,7 +71,10 @@ static void store(Type *ty) {
 
   if (ty->size == 1) {
     printf("  mov [rax], dil\n");
+  } else if (ty->size == 4) {
+    printf("  mov [rax], edi\n");
   } else {
+    assert(ty->size == 8);
     printf("  mov [rax], rdi\n");
   }
   printf("  push rdi\n");
@@ -282,6 +291,9 @@ static void load_arg(Var *var, int idx) {
   if (size == 1) {
     printf(
         "  mov [rbp-%d], %s\n", var->offset, argreg1[idx]);
+  } else if (size == 4) {
+    printf(
+        "  mov [rbp-%d], %s\n", var->offset, argreg4[idx]);
   } else {
     assert(size == 8);
     printf(

@@ -4,7 +4,7 @@
 // char_type->size = 1
 // char_type->align = 1
 Type *char_type = &(Type){TY_CHAR, 1, 1};
-Type *int_type  = &(Type){TY_INT, 8, 8};
+Type *int_type  = &(Type){TY_INT, 4, 4};
 
 bool is_integer(Type *ty) {
   return ty->kind == TY_CHAR || ty->kind == TY_INT;
