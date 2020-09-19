@@ -171,7 +171,8 @@ static char *starts_with_reserved(char *p) {
                        "sizeof",
                        "struct",
                        "typedef",
-                       "void"};
+                       "void",
+                       "_Bool"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);
