@@ -227,13 +227,15 @@ Program *program() {
 }
 
 // basetype = builtin-type | struct-decl | typedef-name
-// builtin-type = "char" | "short" | "int" | "long"
+// builtin-type = "void" | "char" | "short" | "int" | "long"
 static Type *basetype() {
   if (!is_typename()) {
     error_tok(token, "typename expected");
   }
 
-  if (consume("char")) {
+  if (consume("void")) {
+    return void_type;
+  } else if (consume("char")) {
     return char_type;
   } else if (consume("short")) {
     return short_type;
@@ -426,10 +428,10 @@ static void global_var() {
   new_gvar(name, ty, true);
 }
 
-// declartion = basetype declarator type-suffix
+// declaration = basetype declarator type-suffix
 //              ("=" expr)? ";"
 //            | basetype ";"
-static Node *declartion() {
+static Node *declaration() {
   Token *tok = token;
   Type *ty   = basetype();
   if (consume(";")) {
@@ -439,7 +441,12 @@ static Node *declartion() {
   char *name = NULL;
   ty         = declarator(ty, &name);
   ty         = type_suffix(ty);
-  Var *var   = new_lvar(name, ty);
+
+  if (ty->kind == TY_VOID) {
+    error_tok(tok, "variable dclared void");
+  }
+
+  Var *var = new_lvar(name, ty);
 
   if (consume(";")) {
     return new_node(ND_NULL, tok);
@@ -460,8 +467,8 @@ static Node *read_expr_stmt(void) {
 
 // 次のトークンが型を表していればtrue
 static bool is_typename() {
-  return peek("char") || peek("short") || peek("int")
-         || peek("long") || peek("struct")
+  return peek("void") || peek("char") || peek("short")
+         || peek("int") || peek("long") || peek("struct")
          || find_typedef(token);
 }
 
@@ -557,7 +564,7 @@ Node *stmt2() {
   }
 
   if (is_typename()) {
-    return declartion();
+    return declaration();
   }
 
   Node *node = read_expr_stmt();
